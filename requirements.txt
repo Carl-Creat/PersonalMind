@@ -20,6 +20,20 @@ gradio>=4.0.0
 python-dotenv>=1.0.0
 tiktoken>=0.5.0
 
+# Visualization
+vis-network>=9.1.6
+pyecharts>=2.0.0
+
+# Voice (optional)
+edge-tts>=6.0.0
+gtts>=2.3.0
+openai-whisper>=20231117
+
+# File Processing (optional)
+pypdf>=3.0.0
+python-docx>=0.8.11
+docx2txt>=0.8
+
 # Optional
 numpy>=1.24.0
 pandas>=2.0.0
