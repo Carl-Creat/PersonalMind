@@ -1,182 +1,63 @@
-"""
-PersonalMind Web UI
-基于 Gradio 的网页界面
-"""
-import gradio as gr
-from typing import Tuple
+# PersonalMind Web UI
+import sys
+import os
 
-from agent.core import get_agent
-from agent.memory import get_memory
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-def create_web_ui() -> gr.Blocks:
-    """创建 Web UI"""
+def create_web_ui():
+    try:
+        import gradio as gr
+    except ImportError:
+        return None
+    
+    from agent.core import get_agent
+    from agent.memory import get_memory
     
     agent = get_agent()
     
-    # CSS 样式
-    css = """
-    .container {
-        max-width: 800px;
-        margin: auto;
-    }
-    .welcome-box {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 20px;
-        border-radius: 10px;
-        color: white;
-        margin-bottom: 20px;
-    }
-    .stats-box {
-        background: #f5f5f5;
-        padding: 15px;
-        border-radius: 8px;
-        margin-top: 20px;
-    }
-    """
-    
-    with gr.Blocks(css=css, title="PersonalMind - 你的私人 AI 大脑") as app:
-        gr.Markdown("""
-        # 🧠 PersonalMind
-        ### 你的私人 AI 大脑
-        """)
+    with gr.Blocks(title="PersonalMind") as app:
+        gr.Markdown("# PersonalMind - Your AI Brain")
+        gr.Markdown("Your personal AI assistant with memory")
         
-        # 欢迎框
-        gr.Markdown("""
-        <div class="welcome-box">
-        <b>欢迎使用 PersonalMind！</b><br>
-        我能记住你的偏好、联网搜索信息、帮你完成任务。<br>
-        直接和我对话即可，我会自动记住重要信息。
-        </div>
-        """)
+        chatbot = gr.Chatbot(label="Conversation", height=400)
+        msg_input = gr.Textbox(label="Message", placeholder="Type your message...")
         
-        # 对话框
-        chatbot = gr.Chatbot(
-            label="对话历史",
-            height=400,
-            show_copy_button=True
-        )
-        
-        # 输入框
-        msg_input = gr.Textbox(
-            label="输入消息",
-            placeholder="输入你的问题或命令...",
-            lines=2
-        )
-        
-        # 按钮行
-        with gr.Row():
-            submit_btn = gr.Button("发送", variant="primary")
-            clear_btn = gr.Button("清空对话")
-        
-        # 记忆面板
-        with gr.Accordion("📚 记忆管理", open=False):
-            gr.Markdown("##### 记忆统计")
-            memory_stats = gr.JSON(label="统计")
-            
-            with gr.Row():
-                show_mem_btn = gr.Button("查看所有记忆")
-                clear_mem_btn = gr.Button("清空记忆")
-            
-            memory_display = gr.JSON(label="记忆列表")
-        
-        # 命令帮助
-        with gr.Accordion("📖 命令帮助", open=False):
-            gr.Markdown("""
-            **可用命令：**
-            - `/search <关键词>` - 联网搜索
-            - `/remember <内容>` - 记住信息
-            - `/forget <关键词>` - 删除记忆
-            - `/memory` - 查看所有记忆
-            - `/clear` - 清空对话历史
-            - `/stats` - 查看使用统计
-            
-            **也可以直接对话，AI 会自动记住重要信息！**
-            """)
-        
-        # 事件处理
-        def respond(message: str, history: list) -> Tuple:
-            """处理用户输入"""
+        def respond(message, history):
             if not message.strip():
                 return "", history
-            
-            # 获取 AI 回复
             response = agent.chat(message)
-            
-            # 添加到历史
             history.append((message, response))
-            
             return "", history
         
-        def clear_conversation():
-            """清空对话"""
+        def clear():
             agent.llm.clear_history()
             return None, []
         
-        def update_memory_stats():
-            """更新记忆统计"""
+        def show_memory():
             memory = get_memory()
-            return memory.get_memory_stats()
-        
-        def show_all_memories():
-            """显示所有记忆"""
-            memory = get_memory()
+            stats = memory.get_memory_stats()
             all_mem = memory.get_all_memories()
-            return all_mem
+            text = "Memory Statistics: " + str(stats["total"]) + " items\n\n"
+            for mem_type, mems in all_mem.items():
+                if mems:
+                    text += mem_type.title() + ": " + str(len(mems)) + " items\n"
+            return text
         
-        def clear_all_memories():
-            """清空所有记忆"""
-            memory = get_memory()
-            memory.memory.db.clear()
-            return {"message": "记忆已清空"}, {}
+        gr.Button("Send").click(respond, [msg_input, chatbot], [msg_input, chatbot])
+        gr.Button("Clear").click(clear, [], [msg_input, chatbot])
         
-        # 绑定事件
-        submit_btn.click(
-            fn=respond,
-            inputs=[msg_input, chatbot],
-            outputs=[msg_input, chatbot]
-        )
-        
-        msg_input.submit(
-            fn=respond,
-            inputs=[msg_input, chatbot],
-            outputs=[msg_input, chatbot]
-        )
-        
-        clear_btn.click(
-            fn=clear_conversation,
-            outputs=[msg_input, chatbot]
-        )
-        
-        show_mem_btn.click(
-            fn=update_memory_stats,
-            outputs=[memory_stats]
-        )
-        
-        show_mem_btn.click(
-            fn=show_all_memories,
-            outputs=[memory_display]
-        )
-        
-        clear_mem_btn.click(
-            fn=clear_all_memories,
-            outputs=[memory_stats, memory_display]
-        )
-        
-        # 初始化
-        app.load(
-            fn=update_memory_stats,
-            outputs=[memory_stats]
-        )
+        with gr.Accordion("Memory", open=False):
+            gr.Button("View Memories").click(show_memory, [], gr.Textbox(label="Memory", interactive=False))
     
     return app
 
 
-def launch_ui(share: bool = False, port: int = 7860):
-    """启动 UI"""
+def launch_ui(share=False, port=7860):
     app = create_web_ui()
-    app.launch(
-        server_name="0.0.0.0",
-        server_port=port,
-        share=share
-    )
+    if app is None:
+        print("Error: Gradio not installed. Run: pip install gradio")
+        return
+    print("Starting PersonalMind Web UI...")
+    print("Open: http://localhost:" + str(port))
+    app.launch(server_name="0.0.0.0", server_port=port, share=share)
