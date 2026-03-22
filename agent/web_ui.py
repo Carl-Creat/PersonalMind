@@ -1,166 +1,251 @@
-# PersonalMind Web UI
+# PersonalMind Web UI (Flask version)
 import sys
 import os
+import json
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agent.llm import PROVIDERS, get_llm
 from agent.memory import get_memory
 
+try:
+    from flask import Flask, request, jsonify, Response
+    HAS_FLASK = True
+except ImportError:
+    HAS_FLASK = False
 
-def create_web_ui():
-    try:
-        import gradio as gr
-    except ImportError:
+
+def generate_html():
+    provider_options = ""
+    for key, p in PROVIDERS.items():
+        provider_options += '<option value="%s">%s</option>\n' % (key, p["name"])
+    
+    return """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PersonalMind</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; color: #333; }
+.header { background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); color: white; padding: 20px 30px; }
+.header h1 { font-size: 24px; font-weight: 600; }
+.header p { font-size: 14px; opacity: 0.8; margin-top: 4px; }
+.container { max-width: 1200px; margin: 20px auto; display: flex; gap: 20px; padding: 0 20px; }
+.chat-panel { flex: 1; background: white; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); display: flex; flex-direction: column; height: calc(100vh - 120px); }
+.side-panel { width: 280px; background: white; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); padding: 20px; height: fit-content; position: sticky; top: 20px; }
+.chat-messages { flex: 1; overflow-y: auto; padding: 20px; }
+.msg { margin-bottom: 16px; display: flex; }
+.msg.user { justify-content: flex-end; }
+.msg.user .bubble { background: #667eea; color: white; border-radius: 16px 16px 4px 16px; }
+.msg.ai .bubble { background: #f0f2f5; color: #333; border-radius: 16px 16px 16px 4px; }
+.bubble { max-width: 70%%; padding: 12px 16px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+.input-area { padding: 16px; border-top: 1px solid #eee; display: flex; gap: 10px; }
+.input-area input { flex: 1; padding: 12px 16px; border: 2px solid #eee; border-radius: 24px; font-size: 14px; outline: none; transition: border-color 0.2s; }
+.input-area input:focus { border-color: #667eea; }
+.btn { padding: 10px 24px; border: none; border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s; }
+.btn-primary { background: #667eea; color: white; }
+.btn-primary:hover { background: #5a6fd6; }
+.btn-secondary { background: #f0f2f5; color: #333; margin-left: 8px; }
+.btn-secondary:hover { background: #e0e2e5; }
+.side-panel h3 { font-size: 16px; margin-bottom: 12px; color: #333; }
+.side-panel label { display: block; font-size: 12px; color: #888; margin-bottom: 4px; margin-top: 12px; }
+.side-panel select, .side-panel input { width: 100%%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none; }
+.side-panel select:focus, .side-panel input:focus { border-color: #667eea; }
+.status { margin-top: 12px; padding: 10px; background: #f8f9fa; border-radius: 8px; font-size: 12px; color: #666; }
+.cmds { margin-top: 16px; padding-top: 16px; border-top: 1px solid #eee; }
+.cmds p { font-size: 12px; color: #888; line-height: 1.8; }
+.typing { display: none; padding: 12px 20px; color: #888; font-size: 13px; }
+.typing.show { display: block; }
+</style>
+</head>
+<body>
+<div class="header">
+    <h1>PersonalMind</h1>
+    <p>Your Personal AI Brain - 11 Providers Supported</p>
+</div>
+<div class="container">
+    <div class="chat-panel">
+        <div class="chat-messages" id="messages">
+            <div class="msg ai"><div class="bubble">Hello! I'm PersonalMind. Select your AI provider on the right, enter your API key, and start chatting!</div></div>
+        </div>
+        <div class="typing" id="typing">AI is thinking...</div>
+        <div class="input-area">
+            <input type="text" id="msgInput" placeholder="Type your message..." onkeydown="if(event.key==='Enter')send()">
+            <button class="btn btn-primary" onclick="send()">Send</button>
+            <button class="btn btn-secondary" onclick="clearChat()">Clear</button>
+        </div>
+    </div>
+    <div class="side-panel">
+        <h3>Settings</h3>
+        <label>AI Provider</label>
+        <select id="provider" onchange="onProviderChange()">
+            %s
+        </select>
+        <label>Model</label>
+        <select id="model"></select>
+        <label>API Key</label>
+        <input type="password" id="apiKey" placeholder="Enter API key...">
+        <div class="status" id="status">Set API key to start</div>
+        <div class="cmds">
+            <h3 style="font-size:14px;">Commands</h3>
+            <p>/help - Show help<br>/search &lt;kw&gt; - Web search<br>/remember &lt;text&gt; - Remember<br>/forget &lt;kw&gt; - Forget<br>/memory - View memories<br>/stats - Statistics</p>
+        </div>
+    </div>
+</div>
+<script>
+const MODELS = %s;
+let providerEl = document.getElementById('provider');
+let modelEl = document.getElementById('model');
+
+function onProviderChange() {
+    let p = providerEl.value;
+    modelEl.innerHTML = '';
+    if (MODELS[p]) {
+        MODELS[p].forEach(m => {
+            let opt = document.createElement('option');
+            opt.value = m; opt.textContent = m;
+            modelEl.appendChild(opt);
+        });
+    }
+    updateStatus();
+}
+
+function updateStatus() {
+    let key = document.getElementById('apiKey').value;
+    let p = providerEl.value;
+    let m = modelEl.value;
+    document.getElementById('status').textContent = 
+        (key ? 'Ready' : 'API Key NOT SET') + ' | ' + p + ' | ' + m;
+}
+
+document.getElementById('apiKey').addEventListener('input', updateStatus);
+onProviderChange();
+
+function send() {
+    let input = document.getElementById('msgInput');
+    let msg = input.value.trim();
+    if (!msg) return;
+    input.value = '';
+    
+    let key = document.getElementById('apiKey').value;
+    let p = providerEl.value;
+    let m = modelEl.value;
+    
+    let box = document.getElementById('messages');
+    box.innerHTML += '<div class="msg user"><div class="bubble">' + escHtml(msg) + '</div></div>';
+    box.scrollTop = box.scrollHeight;
+    
+    document.getElementById('typing').classList.add('show');
+    
+    fetch('/api/chat', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({message: msg, provider: p, model: m, api_key: key})
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('typing').classList.remove('show');
+        box.innerHTML += '<div class="msg ai"><div class="bubble">' + escHtml(data.reply) + '</div></div>';
+        box.scrollTop = box.scrollHeight;
+    })
+    .catch(e => {
+        document.getElementById('typing').classList.remove('show');
+        box.innerHTML += '<div class="msg ai"><div class="bubble" style="color:red;">Error: ' + escHtml(e.message) + '</div></div>';
+        box.scrollTop = box.scrollHeight;
+    });
+}
+
+function clearChat() {
+    fetch('/api/clear', {method:'POST'});
+    document.getElementById('messages').innerHTML = '<div class="msg ai"><div class="bubble">Chat cleared. How can I help you?</div></div>';
+}
+
+function escHtml(t) {
+    let d = document.createElement('div');
+    d.textContent = t;
+    return d.innerHTML;
+}
+</script>
+</body>
+</html>""" % (
+    provider_options,
+    json.dumps({k: v.get("models", []) for k, v in PROVIDERS.items()})
+)
+
+
+def create_app():
+    if not HAS_FLASK:
         return None
     
+    app = Flask(__name__)
     llm = get_llm()
     memory = get_memory()
     
-    # Build provider choices
-    provider_choices = []
-    for key, p in PROVIDERS.items():
-        label = "%s" % p["name"]
-        provider_choices.append((label, key))
+    @app.route("/")
+    def index():
+        return Response(generate_html(), mimetype="text/html")
     
-    with gr.Blocks(title="PersonalMind", theme=gr.themes.Soft()) as app:
-        gr.Markdown("# PersonalMind - Your AI Brain")
-        gr.Markdown("Supports 10+ AI providers: DeepSeek, OpenAI, Qwen, Kimi, GLM, Claude, Gemini and more.")
+    @app.route("/api/chat", methods=["POST"])
+    def chat():
+        data = request.json
+        message = data.get("message", "")
+        provider = data.get("provider")
+        model = data.get("model")
+        api_key = data.get("api_key")
         
-        with gr.Row():
-            with gr.Column(scale=3):
-                chatbot = gr.Chatbot(label="Chat", height=450)
-                msg_input = gr.Textbox(label="Message", placeholder="Type your message...", show_label=False)
-                with gr.Row():
-                    send_btn = gr.Button("Send", variant="primary")
-                    clear_btn = gr.Button("Clear Chat")
-            
-            with gr.Column(scale=1):
-                gr.Markdown("### Settings")
-                
-                provider_dropdown = gr.Dropdown(
-                    choices=provider_choices,
-                    value=llm.provider_key,
-                    label="AI Provider"
-                )
-                
-                model_dropdown = gr.Dropdown(
-                    choices=PROVIDERS.get(llm.provider_key, {}).get("models", []),
-                    value=llm.model,
-                    label="Model",
-                    allow_custom_value=True
-                )
-                
-                api_key_input = gr.Textbox(
-                    label="API Key",
-                    type="password",
-                    placeholder="Enter your API key..."
-                )
-                
-                status_text = gr.Textbox(label="Status", interactive=False, value="")
-                
-                gr.Markdown("---")
-                gr.Markdown("### Commands")
-                gr.Markdown("/help /search /remember\n/forget /memory /stats")
-                
-                gr.Markdown("---")
-                mem_btn = gr.Button("View Memories")
-                mem_text = gr.Textbox(label="Memories", interactive=False, lines=8)
+        # Update settings
+        if provider:
+            llm.switch_provider(provider, api_key=api_key, model=model)
         
-        # Provider change -> update model list
-        def on_provider_change(provider_key):
-            p = PROVIDERS.get(provider_key, {})
-            models = p.get("models", [])
-            default = p.get("default_model", "")
-            website = p.get("website", "Set your API key below")
-            return gr.update(choices=models, value=default), website
+        if not llm.api_key:
+            return jsonify({"reply": "Please set your API key in the side panel."})
         
-        provider_dropdown.change(
-            on_provider_change,
-            inputs=[provider_dropdown],
-            outputs=[model_dropdown, status_text]
-        )
+        # Handle commands
+        if message.startswith("/"):
+            from agent.core import get_agent
+            agent = get_agent()
+            reply = agent._handle_command(message)
+            return jsonify({"reply": reply})
         
-        # Save settings & update status
-        def on_save_settings(provider_key, model, api_key):
-            llm.switch_provider(provider_key, api_key=api_key, model=model)
-            info = llm.get_current_info()
-            status = "Provider: %s\nModel: %s\nAPI Key: %s" % (
-                info["provider_name"],
-                info["model"],
-                "Set" if info["has_key"] else "NOT SET"
-            )
-            return status
+        # Auto-remember
+        from agent.core import get_agent
+        agent = get_agent()
+        agent._auto_remember(message)
         
-        api_key_input.change(
-            on_save_settings,
-            inputs=[provider_dropdown, model_dropdown, api_key_input],
-            outputs=[status_text]
-        )
+        # Get context and chat
+        context = memory.get_context_for_llm(message)
+        reply = llm.chat(message, context)
         
-        model_dropdown.change(
-            on_save_settings,
-            inputs=[provider_dropdown, model_dropdown, api_key_input],
-            outputs=[status_text]
-        )
-        
-        # Chat
-        def respond(message, history):
-            if not message.strip():
-                return "", history
-            
-            # Apply settings before chatting
-            on_save_settings(provider_dropdown.value, model_dropdown.value, api_key_input.value)
-            
-            response = llm.chat(message)
-            history.append((message, response))
-            return "", history
-        
-        send_btn.click(respond, [msg_input, chatbot], [msg_input, chatbot])
-        msg_input.submit(respond, [msg_input, chatbot], [msg_input, chatbot])
-        
-        # Clear
-        def clear():
-            llm.clear_history()
-            return [], []
-        
-        clear_btn.click(clear, [], [chatbot, msg_input])
-        
-        # Memory view
-        def show_memory():
-            stats = memory.get_memory_stats()
-            all_mem = memory.get_all_memories()
-            text = "Total: %d items\n\n" % stats["total"]
-            for mem_type, mems in all_mem.items():
-                if mems:
-                    text += "[%s] %d items\n" % (mem_type.title(), len(mems))
-                    for m in mems[:5]:
-                        text += "  - %s\n" % m["content"][:60]
-                    text += "\n"
-            return text if stats["total"] > 0 else "No memories yet. Chat to start!"
-        
-        mem_btn.click(show_memory, [], mem_text)
-        
-        # Init status
-        info = llm.get_current_info()
-        initial_status = "Provider: %s\nModel: %s\nAPI Key: %s" % (
-            info["provider_name"],
-            info["model"],
-            "Set" if info["has_key"] else "NOT SET - Enter key on the right"
-        )
-        status_text.value = initial_status
-        model_dropdown.choices = PROVIDERS.get(llm.provider_key, {}).get("models", [])
-        model_dropdown.value = llm.model
+        return jsonify({"reply": reply})
+    
+    @app.route("/api/clear", methods=["POST"])
+    def clear():
+        llm.clear_history()
+        return jsonify({"ok": True})
+    
+    @app.route("/api/memory", methods=["GET"])
+    def get_memories():
+        stats = memory.get_memory_stats()
+        all_mem = memory.get_all_memories()
+        return jsonify({"stats": stats, "memories": all_mem})
+    
+    @app.route("/api/providers", methods=["GET"])
+    def get_providers():
+        return jsonify({k: {"name": v["name"], "models": v["models"], "website": v.get("website", "")} for k, v in PROVIDERS.items()})
     
     return app
 
 
 def launch_ui(share=False, port=7860):
-    app = create_web_ui()
+    app = create_app()
     if app is None:
-        print("Error: Gradio not installed. Run: pip install gradio")
-        print("Try CLI mode instead: python main.py --cli")
+        print("Error: Flask not installed.")
+        print("Install with: py -3 -m pip install --user flask")
+        print("Or try CLI mode: python main.py --cli")
         return
     print("Starting PersonalMind Web UI...")
     print("Open: http://localhost:%d" % port)
-    app.launch(server_name="0.0.0.0", server_port=port, share=share)
+    print("Press Ctrl+C to stop")
+    app.run(host="0.0.0.0", port=port, debug=False)
