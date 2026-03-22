@@ -2,6 +2,8 @@
 
 Your personal AI brain with memory, multi-provider support, and more.
 
+Built with Python 3.9+ | Flask Web UI | 11 AI Providers
+
 ## Supported AI Providers (11+)
 
 ### China
@@ -27,7 +29,7 @@ Switch providers in the Web UI - no code changes needed.
 
 ## Features
 
-- **11 AI Providers** - Switch between providers in the UI
+- **11 AI Providers** - Switch between providers in the UI, support custom endpoints
 - **Memory System** - Three-layer architecture (episodic, semantic, working)
 - **Multi-Agent** - Multiple AI specialists collaborate
 - **Memory Visualization** - Interactive memory network graph
@@ -78,7 +80,19 @@ Open http://localhost:7860 - select provider and enter API key on the right pane
 py -3 main.py --cli
 ```
 
-## Commands (CLI)
+## Screenshots
+
+### Web UI
+- Left panel: Chat interface
+- Right panel: Provider selector, model chooser, API key input
+- Real-time response streaming
+
+### Memory System
+- Auto-remembers important info from conversations
+- Three types: Episodic (events), Semantic (knowledge), Working (tasks)
+- View memories with `/memory` command
+
+## Commands (CLI & Chat)
 
 | Command | Description |
 |---------|-------------|
@@ -94,19 +108,19 @@ py -3 main.py --cli
 
 ```
 PersonalMind/
-  main.py              # Entry point
-  config.py            # Configuration
-  .env.example         # Config template
+  main.py                   # Entry point
+  config.py                 # Configuration
+  .env.example              # Config template
   agent/
-    core.py            # Main agent logic
-    llm.py             # Multi-provider LLM interface
-    memory.py          # Three-layer memory system
-    tools.py           # Built-in tools
-    web_ui.py          # Gradio web interface
-    voice.py           # Voice interface
-    multi_agent.py     # Multi-agent collaboration
-    visualization.py   # Memory visualization
-    file_understanding.py  # File processing
+    core.py                 # Main agent logic
+    llm.py                  # Multi-provider LLM interface (11 providers)
+    memory.py               # Three-layer memory system
+    tools.py                # Built-in tools (search, calculator, time)
+    web_ui.py               # Flask web interface
+    voice.py                # Voice interface (TTS)
+    multi_agent.py          # Multi-agent collaboration
+    visualization.py        # Memory visualization graph
+    file_understanding.py   # File & image processing
 ```
 
 ## Configuration Reference
@@ -115,7 +129,7 @@ PersonalMind/
 # Provider: deepseek, openai, qwen, kimi, zhipu, doubao, ernie, claude, gemini, mistral, siliconflow, custom
 AI_PROVIDER=deepseek
 
-# API Keys (set the one for your provider)
+# API Keys (set the one for your chosen provider)
 DEEPSEEK_API_KEY=
 OPENAI_API_KEY=
 QWEN_API_KEY=
@@ -139,15 +153,40 @@ OPENAI_BASE_URL=
 WEB_UI_PORT=7860
 ```
 
+## API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/` | GET | Web UI page |
+| `/api/chat` | POST | Send message |
+| `/api/clear` | POST | Clear chat history |
+| `/api/memory` | GET | Get all memories |
+| `/api/providers` | GET | List available providers |
+
+### Chat API Example
+```bash
+curl -X POST http://localhost:7860/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Hello!", "provider": "deepseek", "model": "deepseek-chat", "api_key": "sk-xxx"}'
+```
+
 ## Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
 | `python` uses Python 2 | Use `py -3` instead |
 | Permission denied | Add `--user`: `py -3 -m pip install --user -r requirements.txt` |
-| Gradio import error | `py -3 -m pip install --user --force-reinstall pillow gradio` |
 | Port 7860 in use | `py -3 main.py --port 8080` |
 | GBK encoding error | Make sure `.env` has no Chinese characters |
+| No response after send | Check if API key is correct and has sufficient balance |
+
+## Roadmap
+
+- [ ] Persistent memory storage (SQLite)
+- [ ] RAG-based semantic search for memories
+- [ ] Plugin system for custom tools
+- [ ] Docker deployment
+- [ ] Mobile-responsive UI
 
 ## License
 
