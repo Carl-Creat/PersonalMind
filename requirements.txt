@@ -1,13 +1,13 @@
 # PersonalMind Requirements
-# Install with: pip install -r requirements.txt
+# Install with: py -3 -m pip install --user -r requirements.txt
 
-# Core (required for basic function)
-gradio>=4.0.0
+# Core
+flask>=2.0.0
 openai>=1.0.0
 
-# Optional: for web search
+# Optional: web search
 duckduckgo-search>=3.0.0
 
-# Optional: for file processing
+# Optional: file processing
 beautifulsoup4>=4.12.0
 requests>=2.31.0
