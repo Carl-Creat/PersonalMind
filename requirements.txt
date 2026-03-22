@@ -1,39 +1,13 @@
-# Core dependencies
+# PersonalMind Requirements
+# Install with: pip install -r requirements.txt
+
+# Core (required for basic function)
+gradio>=4.0.0
 openai>=1.0.0
-gradio>=4.0.0
-langchain>=0.1.0
-langchain-openai>=0.0.2
-langchain-community>=0.0.10
 
-# Memory & Database
-chromadb>=0.4.0
-sqlite3 (built-in)
-
-# Tools
-requests>=2.31.0
-beautifulsoup4>=4.12.0
+# Optional: for web search
 duckduckgo-search>=3.0.0
-python-dateutil>=2.8.0
 
-# UI & Utils
-gradio>=4.0.0
-python-dotenv>=1.0.0
-tiktoken>=0.5.0
-
-# Visualization
-vis-network>=9.1.6
-pyecharts>=2.0.0
-
-# Voice (optional)
-edge-tts>=6.0.0
-gtts>=2.3.0
-openai-whisper>=20231117
-
-# File Processing (optional)
-pypdf>=3.0.0
-python-docx>=0.8.11
-docx2txt>=0.8
-
-# Optional
-numpy>=1.24.0
-pandas>=2.0.0
+# Optional: for file processing
+beautifulsoup4>=4.12.0
+requests>=2.31.0
