@@ -1,17 +1,40 @@
 # PersonalMind
 
-Your personal AI brain with memory, multi-agent collaboration, and more.
+Your personal AI brain with memory, multi-provider support, and more.
 
-Built with Python 3.9+ | Powered by DeepSeek / OpenAI
+## Supported AI Providers (11+)
+
+### China
+| Provider | Models | Get API Key |
+|----------|--------|-------------|
+| DeepSeek | deepseek-chat, deepseek-reasoner | https://platform.deepseek.com |
+| Qwen (Alibaba) | qwen-turbo, qwen-plus, qwen-max | https://dashscope.console.aliyun.com |
+| Kimi (Moonshot) | moonshot-v1-8k/32k/128k | https://platform.moonshot.cn |
+| Zhipu AI (GLM) | glm-4-flash/air/plus | https://open.bigmodel.cn |
+| Doubao (ByteDance) | doubao-pro-4k/32k/128k | https://console.volcengine.com/ark |
+| ERNIE (Baidu) | ernie-bot-turbo/4 | https://cloud.baidu.com |
+| SiliconFlow | DeepSeek-V3, Qwen2.5, GLM-4 | https://cloud.siliconflow.cn |
+
+### International
+| Provider | Models | Get API Key |
+|----------|--------|-------------|
+| OpenAI | gpt-4o, gpt-4o-mini, gpt-3.5-turbo | https://platform.openai.com/api-keys |
+| Claude (Anthropic) | claude-3-haiku/sonnet/opus | https://console.anthropic.com |
+| Gemini (Google) | gemini-2.0-flash, gemini-1.5-pro | https://aistudio.google.com/apikey |
+| Mistral | mistral-small/medium/large | https://console.mistral.ai |
+
+Switch providers in the Web UI - no code changes needed.
 
 ## Features
 
-- **Memory System** - Remembers your preferences, plans, and facts automatically
-- **Multi-Agent** - Multiple AI specialists work together
+- **11 AI Providers** - Switch between providers in the UI
+- **Memory System** - Three-layer architecture (episodic, semantic, working)
+- **Multi-Agent** - Multiple AI specialists collaborate
 - **Memory Visualization** - Interactive memory network graph
 - **Voice Interface** - Text-to-speech support
-- **File Understanding** - Process PDFs, images, and web pages
+- **File Understanding** - Process PDFs, images, web pages
 - **Web Search** - Real-time internet search
+- **Calculator** - Built-in math tool
 - **Web UI & CLI** - Two interface options
 
 ## Quick Start
@@ -27,40 +50,35 @@ cd PersonalMind
 py -3 -m pip install --user -r requirements.txt
 ```
 
-### 3. Configure API Key
+### 3. Configure
 
-Copy `.env.example` to `.env` and fill in your API key:
-
-**DeepSeek (recommended, free credits):**
-```env
-OPENAI_API_KEY=sk-your-deepseek-api-key
-OPENAI_BASE_URL=https://api.deepseek.com
-OPENAI_MODEL=deepseek-chat
+Copy `.env.example` to `.env`:
+```bash
+cp .env.example .env
 ```
 
-**Or OpenAI:**
+Edit `.env` - set your provider and API key:
 ```env
-OPENAI_API_KEY=sk-your-openai-api-key
-OPENAI_MODEL=gpt-3.5-turbo
+AI_PROVIDER=deepseek
+DEEPSEEK_API_KEY=sk-your-key-here
 ```
 
-Get DeepSeek key: https://platform.deepseek.com
-Get OpenAI key: https://platform.openai.com/api-keys
+Or set it directly in the Web UI (no .env needed).
 
 ### 4. Run
 
-**Web UI:**
+**Web UI (recommended):**
 ```bash
 py -3 main.py
 ```
-Open http://localhost:7860 in your browser.
+Open http://localhost:7860 - select provider and enter API key on the right panel.
 
 **CLI Mode:**
 ```bash
 py -3 main.py --cli
 ```
 
-## Commands
+## Commands (CLI)
 
 | Command | Description |
 |---------|-------------|
@@ -78,50 +96,58 @@ py -3 main.py --cli
 PersonalMind/
   main.py              # Entry point
   config.py            # Configuration
+  .env.example         # Config template
   agent/
     core.py            # Main agent logic
+    llm.py             # Multi-provider LLM interface
     memory.py          # Three-layer memory system
-    llm.py             # LLM interface (DeepSeek/OpenAI)
-    tools.py           # Built-in tools (search, calculator)
+    tools.py           # Built-in tools
     web_ui.py          # Gradio web interface
     voice.py           # Voice interface
     multi_agent.py     # Multi-agent collaboration
     visualization.py   # Memory visualization
-    file_understanding.py  # File & image processing
+    file_understanding.py  # File processing
 ```
 
-## Memory System
+## Configuration Reference
 
-PersonalMind uses a three-layer memory architecture:
+```env
+# Provider: deepseek, openai, qwen, kimi, zhipu, doubao, ernie, claude, gemini, mistral, siliconflow, custom
+AI_PROVIDER=deepseek
 
-- **Episodic Memory** - Records events and conversations
-- **Semantic Memory** - Stores knowledge and preferences
-- **Working Memory** - Tracks current tasks and plans
+# API Keys (set the one for your provider)
+DEEPSEEK_API_KEY=
+OPENAI_API_KEY=
+QWEN_API_KEY=
+KIMI_API_KEY=
+ZHIPU_API_KEY=
+DOUBAO_API_KEY=
+ERNIE_API_KEY=
+CLAUDE_API_KEY=
+GEMINI_API_KEY=
+MISTRAL_API_KEY=
+SILICONFLOW_API_KEY=
+CUSTOM_API_KEY=
 
-The system automatically remembers important information from your conversations.
+# Custom provider URL (when AI_PROVIDER=custom)
+OPENAI_BASE_URL=
 
-## Requirements
+# Override default model (optional)
+# AI_MODEL=
 
-- Python 3.9+
-- DeepSeek or OpenAI API key
+# Web UI
+WEB_UI_PORT=7860
+```
 
 ## Troubleshooting
 
-**`python` command uses Python 2:**
-Use `py -3` instead of `python`.
-
-**Permission denied during pip install:**
-Add `--user` flag: `py -3 -m pip install --user -r requirements.txt`
-
-**Gradio import error:**
-```bash
-py -3 -m pip install --user --force-reinstall pillow gradio
-```
-
-**Port 7860 already in use:**
-```bash
-py -3 main.py --port 8080
-```
+| Problem | Solution |
+|---------|----------|
+| `python` uses Python 2 | Use `py -3` instead |
+| Permission denied | Add `--user`: `py -3 -m pip install --user -r requirements.txt` |
+| Gradio import error | `py -3 -m pip install --user --force-reinstall pillow gradio` |
+| Port 7860 in use | `py -3 main.py --port 8080` |
+| GBK encoding error | Make sure `.env` has no Chinese characters |
 
 ## License
 
