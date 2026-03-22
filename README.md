@@ -1,217 +1,128 @@
-# PersonalMind - 你的私人 AI 大脑 🧠
+# PersonalMind
 
-> 开箱即用的本地 AI 助手，能记忆、能搜索、能执行任务、还能语音对话
+Your personal AI brain with memory, multi-agent collaboration, and more.
 
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+Built with Python 3.9+ | Powered by DeepSeek / OpenAI
 
-![Memory Network Demo](docs/memory_demo.gif)
+## Features
 
-## ✨ 核心特性
+- **Memory System** - Remembers your preferences, plans, and facts automatically
+- **Multi-Agent** - Multiple AI specialists work together
+- **Memory Visualization** - Interactive memory network graph
+- **Voice Interface** - Text-to-speech support
+- **File Understanding** - Process PDFs, images, and web pages
+- **Web Search** - Real-time internet search
+- **Web UI & CLI** - Two interface options
 
-| 特性 | 说明 |
-|------|------|
-| 🧠 **三层记忆系统** | 情景/语义/工作记忆，越用越懂你 |
-| 🔍 **联网搜索** | 实时搜索最新信息 |
-| 👥 **多 Agent 协作** | 4 个 AI 助手团队协作 |
-| 🎤 **语音交互** | 说话就能控制，不用打字 |
-| 📄 **文件理解** | 扔图片/PDF/链接，AI 自动分析 |
-| 🕸️ **记忆可视化** | 漂亮的记忆网络图，一眼看懂 AI 在想什么 |
-| 🌐 **网页界面** | 简洁美观的 Web UI |
-| 🔧 **可扩展** | 轻松添加新工具和新能力 |
+## Quick Start
 
----
-
-## 🚀 快速开始
-
-### 安装
-
+### 1. Clone
 ```bash
-# 克隆仓库
 git clone https://github.com/Carl-Creat/PersonalMind.git
 cd PersonalMind
-
-# 安装依赖
-pip install -r requirements.txt
-
-# 配置（复制示例文件并填入你的 API Key）
-cp .env.example .env
-# 编辑 .env 文件，设置 OPENAI_API_KEY
 ```
 
-### 启动
-
+### 2. Install Dependencies
 ```bash
-# Web UI 模式（推荐）
-python main.py
-
-# 命令行模式
-python main.py --cli
+py -3 -m pip install --user -r requirements.txt
 ```
 
-然后打开浏览器访问 `http://localhost:7860`
+### 3. Configure API Key
 
----
+Copy `.env.example` to `.env` and fill in your API key:
 
-## 🎯 功能演示
-
-### 🧠 记忆系统
-
-PersonalMind 会自动记住你说过的每一件重要的事：
-
-```
-你: 我喜欢吃川菜
-AI: 已记住！我注意到你喜欢川菜，下次推荐餐厅会考虑这个。
-
-你: 下周三有个重要会议
-AI: 已记住！下周三你有重要会议，我会提醒你的。
-
-你: /memory
-【记忆列表】
-- 你喜欢吃川菜 (重要性: 高)
-- 下周三有重要会议 (重要性: 高)
+**DeepSeek (recommended, free credits):**
+```env
+OPENAI_API_KEY=sk-your-deepseek-api-key
+OPENAI_BASE_URL=https://api.deepseek.com
+OPENAI_MODEL=deepseek-chat
 ```
 
-### 👥 多 Agent 团队
-
-不只是"一个 AI"，而是"一个团队"：
-
-```
-你: 帮我策划一个产品发布会
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🤖 **PersonalMind 团队响应**
-
-🔍 研究员: 我来搜索一下最近成功的产品发布会案例...
-📊 数据分析：发现 A 公司使用沉浸式体验提升了 40% 的参与度
-
-🏠 管家: 从日程角度，建议安排在周末下午，参会者精力充沛
-
-💡 创意师: 可以考虑加入互动装置，让嘉宾参与其中
-
-💻 开发者: 技术层面可以用 AR 增强现场体验
+**Or OpenAI:**
+```env
+OPENAI_API_KEY=sk-your-openai-api-key
+OPENAI_MODEL=gpt-3.5-turbo
 ```
 
-### 🎤 语音交互
+Get DeepSeek key: https://platform.deepseek.com
+Get OpenAI key: https://platform.openai.com/api-keys
 
+### 4. Run
+
+**Web UI:**
 ```bash
-# 安装语音依赖
-pip install edge-tts
+py -3 main.py
+```
+Open http://localhost:7860 in your browser.
 
-# 对它说话，不用打字
-python main.py --voice
+**CLI Mode:**
+```bash
+py -3 main.py --cli
 ```
 
-### 📄 文件理解
+## Commands
 
-```
-你: [上传了一张截图]
-AI: 【图片分析】
-    
-描述：这是一张 Python 代码截图
-发现的文字：import torch, numpy as np...
-    
-详细分析：代码展示了 PyTorch 和 NumPy 的导入，
-这是深度学习项目的基础配置。建议可以进一步分析
-代码结构和可能的优化方向。
+| Command | Description |
+|---------|-------------|
+| `/help` | Show help |
+| `/search <keyword>` | Search the web |
+| `/remember <content>` | Remember something |
+| `/forget <keyword>` | Delete related memories |
+| `/memory` | View all memories |
+| `/clear` | Clear conversation |
+| `/stats` | View usage statistics |
 
-标签：代码、截图、Python
-```
-
-### 🕸️ 记忆可视化
-
-打开内置的记忆可视化，看看 AI 是如何记住你的：
-
-![Memory Network](docs/memory_network.png)
-
----
-
-## 🏗️ 项目结构
+## Architecture
 
 ```
 PersonalMind/
-├── main.py                 # 程序入口
-├── config.py              # 配置文件
-├── requirements.txt       # 依赖列表
-├── README.md
-│
-├── agent/
-│   ├── __init__.py
-│   ├── core.py            # 核心 Agent
-│   ├── memory.py          # 三层记忆系统
-│   ├── visualization.py   # 记忆可视化
-│   ├── multi_agent.py     # 多 Agent 团队
-│   ├── voice.py           # 语音交互
-│   ├── file_understanding.py  # 文件/图片理解
-│   ├── llm.py             # LLM 接口
-│   ├── tools.py           # 工具集
-│   └── web_ui.py          # 网页界面
-│
-├── data/                  # 数据存储
-│   └── memory.db         # SQLite 记忆库
-│
-└── docs/                 # 文档
-    ├── demo.gif
-    └── memory_network.png
+  main.py              # Entry point
+  config.py            # Configuration
+  agent/
+    core.py            # Main agent logic
+    memory.py          # Three-layer memory system
+    llm.py             # LLM interface (DeepSeek/OpenAI)
+    tools.py           # Built-in tools (search, calculator)
+    web_ui.py          # Gradio web interface
+    voice.py           # Voice interface
+    multi_agent.py     # Multi-agent collaboration
+    visualization.py   # Memory visualization
+    file_understanding.py  # File & image processing
 ```
 
----
+## Memory System
 
-## 🔧 可用命令
+PersonalMind uses a three-layer memory architecture:
 
-| 命令 | 功能 |
-|------|------|
-| `/search <词>` | 联网搜索 |
-| `/remember <内容>` | 让 AI 记住信息 |
-| `/forget <词>` | 删除相关记忆 |
-| `/memory` | 查看所有记忆 |
-| `/network` | 查看记忆可视化 |
-| `/clear` | 清空对话历史 |
-| `/team` | 查看多 Agent 团队 |
-| `/help` | 显示帮助 |
+- **Episodic Memory** - Records events and conversations
+- **Semantic Memory** - Stores knowledge and preferences
+- **Working Memory** - Tracks current tasks and plans
 
----
+The system automatically remembers important information from your conversations.
 
-## 🤝 贡献
+## Requirements
 
-欢迎贡献代码！
+- Python 3.9+
+- DeepSeek or OpenAI API key
 
-1. Fork 本仓库
-2. 创建新分支 (`git checkout -b feature/新功能`)
-3. 提交代码
-4. 创建 Pull Request
+## Troubleshooting
 
----
+**`python` command uses Python 2:**
+Use `py -3` instead of `python`.
 
-## 📝 更新日志
+**Permission denied during pip install:**
+Add `--user` flag: `py -3 -m pip install --user -r requirements.txt`
 
-### 2026-03-22
-- ✅ 多 Agent 协作系统（4 个专业 AI 助手）
-- ✅ 语音交互（STT + TTS）
-- ✅ 文件/图片理解（GPT-4V 支持）
-- ✅ 记忆可视化（漂亮的网络图）
-- ✅ 重构项目结构
+**Gradio import error:**
+```bash
+py -3 -m pip install --user --force-reinstall pillow gradio
+```
 
-### 2026-03-22 (初始)
-- 🎉 基础版本发布
-- 🧠 三层记忆系统
-- 🔍 联网搜索
-- 🌐 Web UI
-
----
-
-## 📚 学习资源
-
-- [LangChain 文档](https://docs.langchain.com/)
-- [OpenAI API](https://platform.openai.com/docs)
-- [Gradio 教程](https://gradio.app/docs/)
-- [Vis.js Network](https://visjs.org/)
-
----
+**Port 7860 already in use:**
+```bash
+py -3 main.py --port 8080
+```
 
 ## License
 
-MIT License
-
----
-
-*让 AI 真正懂你，成为你的第二大脑* 🧠
+MIT
