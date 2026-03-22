@@ -5,10 +5,11 @@ import os
 class LLMInterface:
     
     def __init__(self, model=None, temperature=None, max_tokens=None, api_key=None):
-        self.model = model or os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
+        self.model = model or os.getenv("OPENAI_MODEL", "deepseek-chat")
         self.temperature = temperature or 0.7
         self.max_tokens = max_tokens or 2000
         self.api_key = api_key or os.getenv("OPENAI_API_KEY", "")
+        self.base_url = os.getenv("OPENAI_BASE_URL", None)
         self.messages = []
     
     def chat(self, user_input, context=""):
@@ -28,7 +29,10 @@ class LLMInterface:
         
         try:
             import openai
-            client = openai.OpenAI(api_key=self.api_key)
+            kwargs = {"api_key": self.api_key}
+            if self.base_url:
+                kwargs["base_url"] = self.base_url
+            client = openai.OpenAI(**kwargs)
             response = client.chat.completions.create(
                 model=self.model,
                 messages=messages,
