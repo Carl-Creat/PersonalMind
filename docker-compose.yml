@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  personalmind:
+    build: .
+    image: personalmind:latest
+    container_name: personalmind
+    ports:
+      - "7860:7860"
+    volumes:
+      # 持久化记忆数据库
+      - ./data:/app/data
+    environment:
+      # 选择 AI 提供商
+      - AI_PROVIDER=${AI_PROVIDER:-deepseek}
+      # API Keys（在 .env 文件中设置）
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - QWEN_API_KEY=${QWEN_API_KEY:-}
+      - KIMI_API_KEY=${KIMI_API_KEY:-}
+      - CLAUDE_API_KEY=${CLAUDE_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - WEB_UI_PORT=7860
+    restart: unless-stopped
+
+# 使用方式:
+#   1. 复制 .env.example 为 .env，填入 API Key
+#   2. docker-compose up -d
+#   3. 访问 http://localhost:7860
